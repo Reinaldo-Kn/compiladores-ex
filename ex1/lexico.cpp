@@ -31,35 +31,34 @@ enum TokenType
     TOKEN_MAISMAIS,
     TOKEN_MOD,
     TOKEN_MAIS,
+    TOKEN_MULT,
+    TOKEN_DIV,
     TOKEN_MENOR,
     TOKEN_MAIOR,
     TOKEN_ELSEIF,
     TOKEN_OUTRO
 };
 
-// Definicao de tipos
 typedef pair<TokenType, string> Token;
 typedef vector<Token> Tokens;
 
-// Protótipos de funções
 bool isKeyword(const string &s);
 bool isIdentifier(const string &s);
 bool isNumber(const string &s);
 bool isOperator(const string &s);
 bool isSeparator(const string &s);
 bool isCharLiteral(const string &s);
+Tokens tokenize(const string &line, int lineNumber);
 
-// Função principal
 int main(int argc, char *argv[])
+
 {
-    // Verifica se o arquivo foi passado como argumento
     if (argc != 2)
     {
         cerr << "Uso: " << argv[0] << " arquivo.c" << endl;
         return 1;
     }
 
-    // Abre o arquivo
     ifstream file(argv[1]);
     if (!file.is_open())
     {
@@ -67,157 +66,30 @@ int main(int argc, char *argv[])
         return 1;
     }
 
-    // Palavras-chave
-    set<string> keywords = {"int", "char", "for", "if", "else", "return"};
-
-    // Tokens
     Tokens tokens;
-
-    // Leitura do arquivo
     string line;
+    int lineNumber = 1;
+
     while (getline(file, line))
     {
-        // Tokenização
-        string token;
-        for (size_t i = 0; i < line.size(); i++)
+        Tokens lineTokens = tokenize(line, lineNumber);
+        if (!lineTokens.empty() && lineTokens.back().first == TOKEN_OUTRO)
         {
-            if (isspace(line[i]))
-            {
-                if (!token.empty())
-                {
-                    // Verifica o tipo do token
-                    if (isKeyword(token))
-                    {
-                        if (token == "int")
-                            tokens.push_back({TOKEN_INT, ""});
-                        else if (token == "char")
-                            tokens.push_back({TOKEN_CHAR, ""});
-                        else if (token == "for")
-                            tokens.push_back({TOKEN_FOR, ""});
-                        else if (token == "if")
-                            tokens.push_back({TOKEN_IF, ""});
-                        else if (token == "else")
-                            tokens.push_back({TOKEN_ELSE, ""});
-                        else if (token == "return")
-                            tokens.push_back({TOKEN_RETURN, ""});
-                    }
-                    else if (isIdentifier(token))
-                    {
-                        tokens.push_back({TOKEN_ID, token});
-                    }
-                    else if (isNumber(token))
-                    {
-                        tokens.push_back({TOKEN_NUM, token});
-                    }
-                    else if (isCharLiteral(token))
-                    {
-                        tokens.push_back({TOKEN_LETRA, token});
-                    }
-                    token.clear();
-                }
-            }
-            else if (isSeparator(string(1, line[i])) || isOperator(string(1, line[i])))
-            {
-                if (!token.empty())
-                {
-                    if (isIdentifier(token))
-                        tokens.push_back({TOKEN_ID, token});
-                    else if (isNumber(token))
-                        tokens.push_back({TOKEN_NUM, token});
-                    else if (isCharLiteral(token))
-                        tokens.push_back({TOKEN_LETRA, token});
-                    token.clear();
-                }
-                // Adiciona o separador ou operador como token
-                string s(1, line[i]);
-                if (s == ";")
-                    tokens.push_back({TOKEN_PEV, ""});
-                else if (s == "(")
-                    tokens.push_back({TOKEN_LPAR, ""});
-                else if (s == ")")
-                    tokens.push_back({TOKEN_RPAR, ""});
-                else if (s == "{")
-                    tokens.push_back({TOKEN_LCHAVES, ""});
-                else if (s == "}")
-                    tokens.push_back({TOKEN_RCHAVES, ""});
-                else if (s == "=")
-                {
-                    // Verifica se é "=="
-                    if (i + 1 < line.size() && line[i + 1] == '=')
-                    {
-                        tokens.push_back({TOKEN_IGUAL, ""});
-                        i++; // Avança para o próximo caractere
-                    }
-                    else
-                    {
-                        tokens.push_back({TOKEN_ATRIB, ""});
-                    }
-                }
-                else if (s == "+")
-                {
-                    // Verifica se é "++"
-                    if (i + 1 < line.size() && line[i + 1] == '+')
-                    {
-                        tokens.push_back({TOKEN_MAISMAIS, ""});
-                        i++; // Avança para o próximo caractere
-                    }
-                    else
-                    {
-                        tokens.push_back({TOKEN_MAIS, ""});
-                    }
-                }
-                else if (s == "%")
-                    tokens.push_back({TOKEN_MOD, ""});
-                else if (s == "<")
-                    tokens.push_back({TOKEN_MENOR, ""});
-                else if (s == ">")
-                    tokens.push_back({TOKEN_MAIOR, ""});
-            }
-            else
-            {
-                // Trata números negativos
-                if (line[i] == '-' && isdigit(line[i + 1]))
-                {
-                    if (!token.empty())
-                    {
-                        if (isIdentifier(token))
-                            tokens.push_back({TOKEN_ID, token});
-                        else if (isNumber(token))
-                            tokens.push_back({TOKEN_NUM, token});
-                        else if (isCharLiteral(token))
-                            tokens.push_back({TOKEN_LETRA, token});
-                        token.clear();
-                    }
-                    token += line[i]; // Adiciona o sinal de negativo
-                }
-                else
-                {
-                    token += line[i];
-                }
-            }
+            return 1;
         }
-        if (!token.empty())
-        {
-            if (isIdentifier(token))
-                tokens.push_back({TOKEN_ID, token});
-            else if (isNumber(token))
-                tokens.push_back({TOKEN_NUM, token});
-            else if (isCharLiteral(token))
-                tokens.push_back({TOKEN_LETRA, token});
-        }
+        tokens.insert(tokens.end(), lineTokens.begin(), lineTokens.end());
+        lineNumber++;
     }
 
-    // Verifica se há "else if" e substitui por <ELSEIF>
     for (size_t i = 0; i + 1 < tokens.size(); i++)
     {
         if (tokens[i].first == TOKEN_ELSE && tokens[i + 1].first == TOKEN_IF)
         {
             tokens[i] = {TOKEN_ELSEIF, ""};
-            tokens.erase(tokens.begin() + i + 1); // Remove o token "if"
+            tokens.erase(tokens.begin() + i + 1);
         }
     }
 
-    // Imprime os tokens
     for (const auto &t : tokens)
     {
         switch (t.first)
@@ -279,6 +151,13 @@ int main(int argc, char *argv[])
         case TOKEN_MAIS:
             cout << "<MAIS> ";
             break;
+        case TOKEN_MULT:
+            cout << "<MULT> ";
+            break;
+        case TOKEN_DIV:
+            cout << "<DIV> ";
+            break;
+
         case TOKEN_MENOR:
             cout << "<MENOR> ";
             break;
@@ -298,7 +177,6 @@ int main(int argc, char *argv[])
     return 0;
 }
 
-// Implementações das funções auxiliares
 bool isKeyword(const string &s)
 {
     static const set<string> keywords = {"int", "char", "for", "if", "else", "return"};
@@ -307,7 +185,7 @@ bool isKeyword(const string &s)
 
 bool isIdentifier(const string &s)
 {
-    if (s.empty() || !isalpha(s[0]) && s[0] != '_')
+    if (s.empty() || (!isalpha(s[0]) && s[0] != '_'))
         return false;
     for (char ch : s)
     {
@@ -321,7 +199,7 @@ bool isNumber(const string &s)
 {
     if (s.empty())
         return false;
-    size_t start = (s[0] == '-') ? 0 : 0; // Considera o sinal de negativo
+    size_t start = (s[0] == '-') ? 1 : 0;
     for (size_t i = start; i < s.size(); i++)
     {
         if (!isdigit(s[i]))
@@ -345,4 +223,205 @@ bool isOperator(const string &s)
 {
     static const set<string> operators = {"=", "+", "-", "*", "/", "%", "==", "!=", "<", ">", "<=", ">=", "&&", "||", "!", "&", "|", "^", "~", "<<", ">>", "++", "--", "+=", "-=", "*=", "/=", "%=", "&=", "|=", "^=", "<<=", ">>="};
     return operators.find(s) != operators.end();
+}
+
+Tokens tokenize(const string &line, int lineNumber)
+{
+    Tokens tokens;
+    string token;
+    bool negative = false;
+
+    for (size_t i = 0; i < line.size(); i++)
+    {
+        char c = line[i];
+
+        if (isspace(c))
+        {
+            if (!token.empty())
+            {
+                if (isKeyword(token))
+                {
+                    if (token == "int")
+                        tokens.push_back({TOKEN_INT, ""});
+                    else if (token == "char")
+                        tokens.push_back({TOKEN_CHAR, ""});
+                    else if (token == "for")
+                        tokens.push_back({TOKEN_FOR, ""});
+                    else if (token == "if")
+                        tokens.push_back({TOKEN_IF, ""});
+                    else if (token == "else")
+                        tokens.push_back({TOKEN_ELSE, ""});
+                    else if (token == "return")
+                        tokens.push_back({TOKEN_RETURN, ""});
+                }
+                else if (isIdentifier(token))
+                {
+                    tokens.push_back({TOKEN_ID, token});
+                }
+                else if (isNumber(token))
+                {
+                    if (negative)
+                    {
+                        tokens.push_back({TOKEN_NUM, "-" + token});
+                        negative = false;
+                    }
+                    else
+                    {
+                        tokens.push_back({TOKEN_NUM, token});
+                    }
+                }
+                else if (isCharLiteral(token))
+                {
+                    tokens.push_back({TOKEN_LETRA, token});
+                }
+                token.clear();
+            }
+        }
+        else if (isSeparator(string(1, c)) || isOperator(string(1, c)))
+        {
+            if (!token.empty())
+            {
+                if (isKeyword(token))
+                {
+                    if (token == "int")
+                        tokens.push_back({TOKEN_INT, ""});
+                    else if (token == "char")
+                        tokens.push_back({TOKEN_CHAR, ""});
+                    else if (token == "for")
+                        tokens.push_back({TOKEN_FOR, ""});
+                    else if (token == "if")
+                        tokens.push_back({TOKEN_IF, ""});
+                    else if (token == "else")
+                        tokens.push_back({TOKEN_ELSE, ""});
+                    else if (token == "return")
+                        tokens.push_back({TOKEN_RETURN, ""});
+                }
+                else if (isIdentifier(token))
+                {
+                    tokens.push_back({TOKEN_ID, token});
+                }
+                else if (isNumber(token))
+                {
+                    tokens.push_back({TOKEN_NUM, token});
+                }
+                else if (isCharLiteral(token))
+                {
+                    tokens.push_back({TOKEN_LETRA, token});
+                }
+                token.clear();
+            }
+
+            string s(1, c);
+            if (s == ";")
+                tokens.push_back({TOKEN_PEV, ""});
+            else if (s == "(")
+                tokens.push_back({TOKEN_LPAR, ""});
+            else if (s == ")")
+                tokens.push_back({TOKEN_RPAR, ""});
+            else if (s == "{")
+                tokens.push_back({TOKEN_LCHAVES, ""});
+            else if (s == "}")
+                tokens.push_back({TOKEN_RCHAVES, ""});
+            else if (s == "=")
+            {
+                if (i + 1 < line.size() && line[i + 1] == '=')
+                {
+                    tokens.push_back({TOKEN_IGUAL, ""});
+                    i++;
+                }
+                else
+                {
+                    tokens.push_back({TOKEN_ATRIB, ""});
+                }
+            }
+            else if (s == "+")
+            {
+                if (i + 1 < line.size() && line[i + 1] == '+')
+                {
+                    tokens.push_back({TOKEN_MAISMAIS, ""});
+                    i++;
+                }
+                else
+                {
+                    tokens.push_back({TOKEN_MAIS, ""});
+                }
+            }
+            else if (c == '-')
+            {
+                if (token.empty())
+                {
+                    negative = true;
+                    token += c;
+                }
+                else if (isNumber(token))
+                {
+                    if (negative)
+                    {
+                        tokens.push_back({TOKEN_NUM, "-" + token});
+                    }
+                    else
+                    {
+                        tokens.push_back({TOKEN_NUM, token});
+                    }
+                    token.clear();
+                    negative = false;
+                    string s(1, c);
+                    tokens.push_back({TOKEN_MAIS, ""});
+                }
+            }
+
+            else if (s == "*")
+                tokens.push_back({TOKEN_MULT, ""});
+            else if (s == "/")
+                tokens.push_back({TOKEN_DIV, ""});
+            else if (s == "%")
+                tokens.push_back({TOKEN_MOD, ""});
+            else if (s == "<")
+                tokens.push_back({TOKEN_MENOR, ""});
+            else if (s == ">")
+                tokens.push_back({TOKEN_MAIOR, ""});
+        }
+        else if (!isalnum(c) && c != '_' && c != '\'')
+        {
+            cerr << "Erro Lexico: “" << c << "” nao reconhecido na linha " << lineNumber << "." << endl;
+            tokens.push_back({TOKEN_OUTRO, ""});
+            return tokens;
+        }
+        else
+        {
+            token += c;
+        }
+    }
+
+    if (!token.empty())
+    {
+        if (isKeyword(token))
+        { // Keyword check last token
+            if (token == "int")
+                tokens.push_back({TOKEN_INT, ""});
+            else if (token == "char")
+                tokens.push_back({TOKEN_CHAR, ""});
+            else if (token == "for")
+                tokens.push_back({TOKEN_FOR, ""});
+            else if (token == "if")
+                tokens.push_back({TOKEN_IF, ""});
+            else if (token == "else")
+                tokens.push_back({TOKEN_ELSE, ""});
+            else if (token == "return")
+                tokens.push_back({TOKEN_RETURN, ""});
+        }
+        else if (isIdentifier(token))
+        {
+            tokens.push_back({TOKEN_ID, token});
+        }
+        else if (isNumber(token))
+        {
+            tokens.push_back({TOKEN_NUM, token});
+        }
+        else if (isCharLiteral(token))
+        {
+            tokens.push_back({TOKEN_LETRA, token});
+        }
+    }
+    return tokens;
 }
