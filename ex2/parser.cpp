@@ -22,11 +22,10 @@ struct Token
     char value;
 };
 
-string entrada; // Agora a entrada será definida na `main()`
+string entrada;
 size_t pos = 0;
 Token tokenAtual;
 
-// **🔹 Declarações das funções**
 void A();
 void E();
 void E_();
@@ -36,7 +35,6 @@ void L();
 void consumir(TokenType esperado);
 Token getNextToken();
 
-// Função para obter o próximo token
 Token getNextToken()
 {
     Token token;
@@ -88,7 +86,7 @@ Token getNextToken()
     {
         token.type = TOKEN_ERRO;
         token.value = c;
-        return token; // Retorna erro sem avançar
+        return token;
     }
 
     token.value = c;
@@ -96,7 +94,6 @@ Token getNextToken()
     return token;
 }
 
-// Avança para o próximo token
 void consumir(TokenType esperado)
 {
     if (tokenAtual.type == esperado)
@@ -110,7 +107,6 @@ void consumir(TokenType esperado)
     }
 }
 
-// **🔹 Implementação das funções do parser**
 void A()
 {
     consumir(TOKEN_I);
@@ -188,7 +184,6 @@ void L()
     }
 }
 
-// **Função principal**
 int main(int argc, char *argv[])
 {
     if (argc < 2)
@@ -197,11 +192,11 @@ int main(int argc, char *argv[])
         return 1;
     }
 
-    entrada = argv[1];           // Recebe a string da linha de comando
-    pos = 0;                     // Reseta a posição do parser
-    tokenAtual = getNextToken(); // Inicia com o primeiro token
+    entrada = argv[1];
+    pos = 0;
+    tokenAtual = getNextToken();
 
-    A(); // Começa pelo símbolo inicial da gramática
+    A();
 
     if (tokenAtual.type == TOKEN_FIM)
     {
