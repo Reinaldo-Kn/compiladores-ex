@@ -9,7 +9,6 @@
 
 using namespace std;
 
-// Enumeração para os tokens possíveis
 enum TokenType
 {
     TOKEN_INT,
