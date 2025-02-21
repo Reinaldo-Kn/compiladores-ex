@@ -395,7 +395,7 @@ Tokens tokenize(const string &line, int lineNumber)
     if (!token.empty())
     {
         if (isKeyword(token))
-        { // Keyword check last token
+        {
             if (token == "int")
                 tokens.push_back({TOKEN_INT, ""});
             else if (token == "char")
